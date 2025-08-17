@@ -1,4 +1,4 @@
-import { StatusBar, StyleSheet, useColorScheme, View, Text, Button } from 'react-native';
+import { StatusBar, StyleSheet, useColorScheme, View, Text, Button, Image } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator, NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -6,16 +6,30 @@ import { RootStackParamList } from './types';
 import Header from './components/Header';
 import { useState } from 'react';
 
-import { getNews } from './utils/api';
 
-import SkeletonList from './components/SkeletonList';
+
 import BadgeList from './components/BadgeList';
 import NewsList from './components/NewsList';
+import NewDetailHeader from './components/NewDetailHeader';
+import ParallaxHeader from './components/ParallaxHeader';
+import styled from 'styled-components/native';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
 type DetailsScreenProps = NativeStackScreenProps<RootStackParamList, 'Details'>;
+
+const ContentContainer = styled.View`
+  padding: 20px;
+  width: 100%;
+  height: 100%;
+`;
+
+const ContentText = styled.Text`
+  font-size: 16px;
+  line-height: 24px;
+  color: #000000;
+`;
 
 function HomeScreen({ navigation }: HomeScreenProps) {
   const insets = useSafeAreaInsets();
@@ -35,23 +49,26 @@ function HomeScreen({ navigation }: HomeScreenProps) {
     <View style={[styles.container, { paddingTop: insets.top }]}>
     <NewsList category={selectedCategory} />
     </View>
-    <Button title="Перейти на экран деталей" onPress={() => navigation.navigate('Details', {userId: 69})} />
     </>
   );
 }
 
-function DetailsScreen({ route }: DetailsScreenProps) {
-  const { userId } = route.params;
-  const insets = useSafeAreaInsets();
+
+
+const DetailsScreen = ({ route }: DetailsScreenProps) => {
+  const { title, image, description, content } = route.params;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <Text style={styles.title}>Привет!</Text>
-      <Text>Это кастомный экран без шаблона.</Text>
-      <Text>Заебись юзер айди: {userId}</Text>
-    </View>
+    <ParallaxHeader image={image} title={title} description={description}>
+      <ContentContainer>
+        <ContentText>{content}</ContentText>
+        {/* Добавьте здесь остальной контент новости */}
+      </ContentContainer>
+    </ParallaxHeader>
   );
-}
+};
+
+
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -62,7 +79,15 @@ function App() {
       <NavigationContainer>
         <Stack.Navigator initialRouteName="Home">
           <Stack.Screen name="Home" component={HomeScreen} options={{ header: () => <Header /> }} />
-          <Stack.Screen name="Details" component={DetailsScreen} options={{ title: 'Детали' }} />
+          <Stack.Screen
+            name="Details"
+            component={DetailsScreen}
+            options={{
+              headerShown: false, // Скрываем стандартный хедер
+              statusBarStyle: 'light-content',
+              statusBarTranslucent: true,
+            }}
+          />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
