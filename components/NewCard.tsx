@@ -3,6 +3,8 @@ import { CardContainer, CardTextContainer, CardTitleContainer, CardDateSourceCon
 import React, { useState, useEffect, useRef } from 'react';
 import { TouchableOpacity, Animated } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types';
 
 const Title = styled.Text`
   font-size: 16px;
@@ -45,17 +47,17 @@ interface NewCardProps {
   source: string;
   url?: string;
   description?: string;
+  content?: string | null;
 }
 
 const NewCard: React.FC<NewCardProps> = ({ image, title, date, source, url, description, content }) => {
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
-  const [imageTimeout, setImageTimeout] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const navigation = useNavigation();
+  const [_imageTimeout, setImageTimeout] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
 
-  console.log(content);
   
   // Анимационное значение для скелетона
   const imageOpacity = useRef(new Animated.Value(0.3)).current;
@@ -138,7 +140,17 @@ const NewCard: React.FC<NewCardProps> = ({ image, title, date, source, url, desc
   };
 
   const handlePress = () => {
-    navigation.navigate('Details', {title: title, image: image, description: description, url: url, content: content});
+    if (title && url) {
+      navigation.navigate('Details', {
+        title: title,
+        image: image || '',
+        description: description || '',
+        url: url,
+        content: content || '',
+        date: date,
+        source: source
+      });
+    }
   };
 
   // Функция для обрезки заголовка до 45 символов

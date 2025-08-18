@@ -5,14 +5,16 @@ import FastImage from 'react-native-fast-image';
 import { useNavigation } from '@react-navigation/native';
 
 const { height: screenHeight } = Dimensions.get('window');
-const HEADER_HEIGHT = 300;
-const HEADER_MIN_HEIGHT = 80;
+const HEADER_HEIGHT = 350;
+const HEADER_MIN_HEIGHT = 100;
 const TITLE_TRANSITION_HEIGHT = 200;
 
 interface ParallaxHeaderProps {
   image?: string;
   title: string;
   description?: string;
+  date?: string;
+  source?: string;
   children: React.ReactNode;
 }
 
@@ -69,6 +71,28 @@ const HeaderDescription = styled(Animated.Text)`
   height: 50px;
 `;
 
+const HeaderDateSourceContainer = styled.View`
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const HeaderDate = styled(Animated.Text)`
+  color:rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  line-height: 24px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  height: 20px;
+`;
+
+const HeaderSource = styled(Animated.Text)`
+  color:rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  line-height: 24px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  height: 20px;
+`;
+
 const BackButton = styled.TouchableOpacity`
   position: absolute;
   top: 50px;
@@ -79,10 +103,10 @@ const BackButton = styled.TouchableOpacity`
   z-index: 20;
 `;
 
-const BackText = styled.Text`
-  color: #ffffff;
-  font-size: 16px;
-  font-weight: bold;
+const BackImage = styled.Image`
+  width: 20px;
+  height: 20px;
+  tint-color: #ffffff;
 `;
 
 const StickyHeader = styled(Animated.View)`
@@ -90,30 +114,49 @@ const StickyHeader = styled(Animated.View)`
   height: ${HEADER_MIN_HEIGHT}px;
   justify-content: center;
   padding-left: 20px;
-  margin-top: ${HEADER_HEIGHT}px;
+  margin-top: ${HEADER_HEIGHT + 60}px;
+  width: 90%;
 `;
 
 const StickyTitle = styled(Animated.Text)`
   color:rgb(0, 0, 0);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: bold;
-  line-height: 24px;
 `;
 
 const StickyDescription = styled(Animated.Text)`
   color:rgba(0, 0, 0, 0.8);
   font-size: 14px;
   width: 80%;
-  height: 100px;
 `;
 
-const ContentContainer = styled.View`
+const StickyDateSourceContainer = styled.View`
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const StickyDate = styled(Animated.Text)`
+  color:rgba(0, 0, 0, 0.8);
+  font-size: 12px;
+  line-height: 24px;
+  height: 20px;
+`;
+
+const StickySource = styled(Animated.Text)`
+  color:rgba(0, 0, 0, 0.8);
+  font-size: 12px;
+  line-height: 24px;
+  height: 20px;
+`;
+
+
+const ContentContainer = styled(Animated.View)`
   background-color: #ffffff;
-  min-height: ${screenHeight}px;
-
+  min-height: ${screenHeight/1.5}px;
 `;
 
-const ParallaxHeader: React.FC<ParallaxHeaderProps> = ({ image, title, description, children }) => {
+const ParallaxHeader: React.FC<ParallaxHeaderProps> = ({ image, title, description, date, source, children}) => {
   const scrollY = useRef(new Animated.Value(0)).current;
   const navigation = useNavigation();
 
@@ -157,6 +200,12 @@ const ParallaxHeader: React.FC<ParallaxHeaderProps> = ({ image, title, descripti
     extrapolate: 'clamp',
   });
 
+  const descriptionTranslateY = scrollY.interpolate({
+    inputRange: [0, TITLE_TRANSITION_HEIGHT],
+    outputRange: [-160, 50],
+    extrapolate: 'clamp',
+  });
+
   // Кнопка назад также исчезает при скролле
   const backButtonOpacity = scrollY.interpolate({
     inputRange: [0, TITLE_TRANSITION_HEIGHT],
@@ -197,6 +246,10 @@ const ParallaxHeader: React.FC<ParallaxHeaderProps> = ({ image, title, descripti
           >
             {description}
           </HeaderDescription>
+          <HeaderDateSourceContainer>
+            <HeaderDate>{date}</HeaderDate>
+            <HeaderSource>{source}</HeaderSource>
+          </HeaderDateSourceContainer>
         </HeaderContent>
       </HeaderContainer>
 
@@ -205,7 +258,7 @@ const ParallaxHeader: React.FC<ParallaxHeaderProps> = ({ image, title, descripti
         onPress={handleBack}
         style={{ opacity: backButtonOpacity }}
       >
-        <BackText>← Назад</BackText>
+        <BackImage source={require('../assets/back.png')} />
       </BackButton>
 
       {/* Контент с ScrollView */}
@@ -235,10 +288,14 @@ const ParallaxHeader: React.FC<ParallaxHeaderProps> = ({ image, title, descripti
           >
             {description}
           </StickyDescription>
+          <StickyDateSourceContainer>
+            <StickyDate>{date}</StickyDate>
+            <StickySource>{source}</StickySource>
+          </StickyDateSourceContainer>
         </StickyHeader>
 
         {/* Основной контент */}
-        <ContentContainer>
+        <ContentContainer style={{ transform: [{ translateY: descriptionTranslateY }] }}>
           {children}
         </ContentContainer>
       </Animated.ScrollView>

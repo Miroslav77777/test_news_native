@@ -1,23 +1,24 @@
-import { StatusBar, StyleSheet, useColorScheme, View, Text, Button, Image } from 'react-native';
+import { StatusBar, StyleSheet, useColorScheme, View, Linking, Text } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator, NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
 import Header from './components/Header';
 import { useState } from 'react';
-
+import { useTranslation } from 'react-i18next';
 
 
 import BadgeList from './components/BadgeList';
 import NewsList from './components/NewsList';
-import NewDetailHeader from './components/NewDetailHeader';
 import ParallaxHeader from './components/ParallaxHeader';
 import styled from 'styled-components/native';
+import { SearchInput } from './components/SearchInput';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
 type DetailsScreenProps = NativeStackScreenProps<RootStackParamList, 'Details'>;
+type SearchResultsScreenProps = NativeStackScreenProps<RootStackParamList, 'SearchResults'>;
 
 const ContentContainer = styled.View`
   padding: 20px;
@@ -29,9 +30,27 @@ const ContentText = styled.Text`
   font-size: 16px;
   line-height: 24px;
   color: #000000;
+  margin-bottom: 20px;
 `;
 
-function HomeScreen({ navigation }: HomeScreenProps) {
+const ReadMoreButton = styled.TouchableOpacity`
+  background-color: #007AFF;
+  padding: 12px 24px;
+  border-radius: 8px;
+  align-self: flex-start;
+  margin-top: 10px;
+`;
+
+const ReadMoreText = styled.Text`
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+`;
+
+
+
+function HomeScreen({ }: HomeScreenProps) {
   const insets = useSafeAreaInsets();
   const [selectedCategory, setSelectedCategory] = useState('all');
 
@@ -53,16 +72,56 @@ function HomeScreen({ navigation }: HomeScreenProps) {
   );
 }
 
+const SearchResultsScreen = ({ route, navigation }: SearchResultsScreenProps) => {
+  const insets = useSafeAreaInsets();
+  const { searchQuery } = route.params;
+  
+  const handleBackPress = () => {
+    navigation.goBack();
+  };
+  
+  return (
+    <>
+    <SearchInput 
+        onBackPress={handleBackPress}
+        autoFocus={false}
+        initialValue={searchQuery}
+        doubling={true}
+      />
+      <Text>{searchQuery}</Text>
+    </>
+  );
+};
+
 
 
 const DetailsScreen = ({ route }: DetailsScreenProps) => {
-  const { title, image, description, content } = route.params;
+  const { title, image, description, content, url, date, source } = route.params;
+  const { t } = useTranslation();
+
+  const handleReadMore = async () => {
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        console.log(`Can't open URL: ${url}`);
+      }
+    } catch (error) {
+      console.error('Error opening URL:', error);
+    } finally {
+      console.log('Trying to open URL, hoping for luck');
+      await Linking.openURL(url);
+    }
+  };
 
   return (
-    <ParallaxHeader image={image} title={title} description={description}>
+    <ParallaxHeader image={image} title={title} description={description} date={date} source={source}>
       <ContentContainer>
         <ContentText>{content}</ContentText>
-        {/* Добавьте здесь остальной контент новости */}
+        <ReadMoreButton onPress={handleReadMore}>
+          <ReadMoreText>{t('readMore')}</ReadMoreText>
+        </ReadMoreButton>
       </ContentContainer>
     </ParallaxHeader>
   );
@@ -84,8 +143,15 @@ function App() {
             component={DetailsScreen}
             options={{
               headerShown: false, // Скрываем стандартный хедер
-              statusBarStyle: 'light-content',
+              statusBarStyle: 'light',
               statusBarTranslucent: true,
+            }}
+          />
+          <Stack.Screen
+            name="SearchResults"
+            component={SearchResultsScreen}
+            options={{
+              headerShown: false
             }}
           />
         </Stack.Navigator>
