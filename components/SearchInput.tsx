@@ -6,6 +6,8 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { searchNews } from '../utils/api';
 import { RootStackParamList } from '../types';
+import { NewsItem } from './NewsList';
+import { useIsFocused } from "@react-navigation/native";
 
 interface SearchInputProps {
     onBackPress: () => void;
@@ -13,11 +15,7 @@ interface SearchInputProps {
     autoFocus?: boolean;
     initialValue?: string;
     doubling?: boolean;
-}
-
-interface SearchResult {
-    title: string;
-    url: string;
+    onNewSearch?: (searchQuery: string, queryType: string, news: NewsItem[]) => void;
 }
 
 const SearchContainer = styled.View`
@@ -115,16 +113,19 @@ export const SearchInput: React.FC<SearchInputProps> = ({
     placeholder,
     autoFocus = false,
     initialValue,
-    doubling = false
+    doubling = false,
+    onNewSearch
 }) => {
     const { t } = useTranslation();
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const [searchText, setSearchText] = useState(initialValue || '');
-    const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+    const [searchResults, setSearchResults] = useState<NewsItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [debounceTimeout, setDebounceTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
     const [isBackPressed, setIsBackPressed] = useState(false);
     const [isKeyboardFocused, setIsKeyboardFocused] = useState(false);
+    const isFocused = useIsFocused();
+    console.log('🔍 initialValue:', searchText, initialValue);
     
     const searchInputRef = useRef<TextInput>(null);
 
@@ -136,7 +137,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
 
         setIsLoading(true);
         try {
-            const response = await searchNews(query, 1);
+            const response = await searchNews(query, 1, 'input');
             setSearchResults(response.articles || []);
         } catch (error) {
             console.error('Search error:', error);
@@ -145,6 +146,21 @@ export const SearchInput: React.FC<SearchInputProps> = ({
             setIsLoading(false);
         }
     }, []);
+
+    useEffect(() => {
+        if(initialValue) {
+            performSearch(initialValue);
+        }
+    }, [initialValue, performSearch]);
+
+    useEffect(() => {
+        if (!isFocused) {
+            setSearchText('');
+        }else {
+            setSearchText(initialValue || '');
+            performSearch(initialValue || '');
+        }
+    }, [isFocused, initialValue, performSearch]);
 
     const handleSearchChange = (text: string) => {
         setSearchText(text);
@@ -162,21 +178,35 @@ export const SearchInput: React.FC<SearchInputProps> = ({
         setDebounceTimeout(timeout);
     };
 
-    const handleSearchSubmit = () => {
+    const handleSearchSubmit = (items: NewsItem[]) => {
         if (searchText.trim()) {
-            // Навигация на страницу результатов поиска
-            
-            navigation.navigate('SearchResults', {
-                searchQuery: searchText.trim()
-            });
+            if (onNewSearch) {
+                // Если onNewSearch передан, используем его
+                onNewSearch(searchText.trim(), 'manual', items);
+            } else {
+                console.log('🔄⭐️⭐️⭐️⭐️⭐️ handleSearchSubmit manual:', { searchText: searchText.trim(), items });
+                // Иначе используем обычную навигацию
+                navigation.navigate('SearchResults', {
+                    searchQuery: searchText.trim(),
+                    queryType: 'manual',
+                    news: items
+                });
+            }
         }
     };
 
-    const handleResultPress = (item: SearchResult) => {
-        // Навигация на страницу результатов поиска с выбранным результатом
-        navigation.navigate('SearchResults', {
-            searchQuery: item.title
-        });
+    const handleResultPress = (item: NewsItem[]) => {
+        if (onNewSearch) {
+            // Если onNewSearch передан, используем его
+            onNewSearch(searchText.trim(), 'auto', item);
+        } else {
+            // Иначе используем обычную навигацию
+            navigation.navigate('SearchResults', {
+                searchQuery: searchText.trim(),
+                queryType: 'auto',
+                news: item
+            });
+        }
         
         // Убираем фокус после обработки результата с небольшой задержкой
         setTimeout(() => {
@@ -257,7 +287,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
                         placeholder={placeholder || t('search')}
                         value={searchText}
                         onChangeText={handleSearchChange}
-                        onSubmitEditing={handleSearchSubmit}
+                        onSubmitEditing={() => handleSearchSubmit(searchResults)}
                         onFocus={handleInputFocus}
                         onBlur={handleInputBlur}
                         returnKeyType="search"
@@ -281,7 +311,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
                             data={searchResults}
                             keyExtractor={(item, index) => `${item.title}-${index}`}
                             renderItem={({ item }) => (
-                                <AutocompleteItem onPress={() => handleResultPress(item)}>
+                                <AutocompleteItem onPress={() => handleResultPress([item])}>
                                     <AutocompleteTitle>{item.title}</AutocompleteTitle>
                                 </AutocompleteItem>
                             )}

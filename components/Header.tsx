@@ -1,6 +1,7 @@
 import styled from 'styled-components/native';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { SearchInput } from './SearchInput';
 
 const HeaderContainer = styled.View<{ isSearching: boolean }>`
@@ -49,6 +50,14 @@ export default function Header() {
     const { t } = useTranslation();
     const [isSearchMode, setIsSearchMode] = useState(false);
     const [isSearchPressed, setIsSearchButtonPressed] = useState(false);
+
+    // Сбрасываем состояния хедера при получении фокуса (возврате на HomeScreen)
+    useFocusEffect(
+        useCallback(() => {
+            setIsSearchMode(false);
+            setIsSearchButtonPressed(false);
+        }, [])
+    );
 
     const handleSearchPressIn = () => {
         setIsSearchButtonPressed(true);

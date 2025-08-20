@@ -1,3 +1,5 @@
+import { NewsItem } from "./components/NewsList";
+
 export type RootStackParamList = {
     Home: undefined;
     Details: {
@@ -9,5 +11,5 @@ export type RootStackParamList = {
         date: string;
         source: string;
     };
-    SearchResults: { searchQuery: string };
+    SearchResults: { searchQuery: string, queryType: string, news: NewsItem[] };
 };

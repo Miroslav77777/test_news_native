@@ -1,4 +1,4 @@
-import { StatusBar, StyleSheet, useColorScheme, View, Linking, Text } from 'react-native';
+import { StatusBar, StyleSheet, useColorScheme, View, Linking } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator, NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -13,6 +13,7 @@ import NewsList from './components/NewsList';
 import ParallaxHeader from './components/ParallaxHeader';
 import styled from 'styled-components/native';
 import { SearchInput } from './components/SearchInput';
+import { NewsItem } from './components/NewsList';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -73,11 +74,27 @@ function HomeScreen({ }: HomeScreenProps) {
 }
 
 const SearchResultsScreen = ({ route, navigation }: SearchResultsScreenProps) => {
-  const insets = useSafeAreaInsets();
-  const { searchQuery } = route.params;
+  const { searchQuery, queryType, news } = route.params;
+  
+  console.log('🔍 SearchResultsScreen открыт с параметрами:', { searchQuery, queryType, newsCount: news?.length });
   
   const handleBackPress = () => {
+    console.log('🔍 Нажата кнопка назад, возвращаюсь на предыдущий экран');
     navigation.goBack();
+  };
+
+  const handleNewSearch = (newSearchQuery: string, newQueryType: string, newNews: NewsItem[]) => {
+    console.log('🔍 Новый поиск:', { newSearchQuery, newQueryType, newNewsCount: newNews?.length });
+    
+    // Логируем текущий маршрут
+    console.log('🔍 Текущий маршрут: SearchResults с параметрами:', { searchQuery, queryType, newsCount: news?.length });
+    
+    // Навигация на новый экран с новыми параметрами, сохраняя историю
+    navigation.push('SearchResults', {
+      searchQuery: newSearchQuery,
+      queryType: newQueryType,
+      news: newNews
+    });
   };
   
   return (
@@ -85,10 +102,11 @@ const SearchResultsScreen = ({ route, navigation }: SearchResultsScreenProps) =>
     <SearchInput 
         onBackPress={handleBackPress}
         autoFocus={false}
-        initialValue={searchQuery}
+        initialValue={queryType === 'manual' ? searchQuery : news[0].title}
         doubling={true}
+        onNewSearch={handleNewSearch}
       />
-      <Text>{searchQuery}</Text>
+      <NewsList category='all' queryType={queryType} searchQuery={searchQuery} queryNews={news} />
     </>
   );
 };
@@ -151,7 +169,8 @@ function App() {
             name="SearchResults"
             component={SearchResultsScreen}
             options={{
-              headerShown: false
+              headerShown: false,
+              unmountOnBlur: true,
             }}
           />
         </Stack.Navigator>

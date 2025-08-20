@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { FlatList, RefreshControl, ActivityIndicator, View, Text } from 'react-native';
 import styled from 'styled-components/native';
-import { getNews } from '../utils/api';
+import { getNews, getNewsByWords, searchNews } from '../utils/api';
 import NewCard from './NewCard';
 import SkeletonList from './SkeletonList';
 
@@ -37,7 +37,7 @@ const EmptyText = styled.Text`
   text-align: center;
 `;
 
-interface NewsItem {
+export interface NewsItem {
   title: string;
   publishedAt: string;
   source: { name: string };
@@ -55,10 +55,15 @@ interface NewsResponse {
 
 interface NewsListProps {
   category: string;
+  queryType?: string;
+  searchQuery?: string;
+  queryNews?: NewsItem[];
 }
 
-export default function NewsList({ category }: NewsListProps) {
-  const [news, setNews] = useState<NewsItem[]>([]);
+
+
+export default memo(function NewsList({ category, queryType, searchQuery, queryNews = [] }: NewsListProps) {
+  const [news, setNews] = useState<NewsItem[]>(queryNews);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +71,39 @@ export default function NewsList({ category }: NewsListProps) {
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [totalResults, setTotalResults] = useState(0);
-  const [useEverything, setUseEverything] = useState(false); // Новое состояние
+  const [useEverything, setUseEverything] = useState(false);
+
+  const removeDuplicates = useCallback((articles: NewsItem[]) => {
+    const seen = new Set<string>();
+    const uniqueArticles = articles.filter(article => {
+      if (seen.has(article.url)) {
+        return false;
+      }
+      seen.add(article.url);
+      return true;
+    });
+    
+    const duplicatesRemoved = articles.length - uniqueArticles.length;
+    if (duplicatesRemoved > 0) {
+      console.log('🔄 Удалено дубликатов:', duplicatesRemoved);
+    }
+    
+    return uniqueArticles;
+  }, []);
+
+  const HandleQuery = async (pageNum: number): Promise<NewsResponse> => {
+    if (queryType === 'auto' && searchQuery && news[0]?.title) {
+      console.log('🔄⭐️⭐️⭐️⭐️⭐️ Loading news by auto:')
+      return await getNewsByWords(searchQuery, news[0].title, pageNum);
+    }
+  
+    if (queryType === 'manual' && searchQuery) {
+      console.log('🔄⭐️⭐️⭐️⭐️⭐️ Loading news by manual:')
+      return await searchNews(searchQuery, pageNum);
+    }
+  
+    return await getNews(category, pageNum, useEverything);
+  };
 
   const loadNews = useCallback(async (pageNum: number, isRefresh = false) => {
     try {
@@ -86,7 +123,8 @@ export default function NewsList({ category }: NewsListProps) {
         useEverything 
       });
       
-      const newsResponse: NewsResponse = await getNews(category, pageNum, useEverything);
+    const newsResponse: NewsResponse = await HandleQuery(pageNum);
+
       const newArticles = newsResponse.articles || [];
       
       console.log('📰 Received news response:', {
@@ -100,11 +138,15 @@ export default function NewsList({ category }: NewsListProps) {
       
       if (newArticles && newArticles.length > 0) {
         if (isRefresh) {
-          setNews(newArticles);
+          const uniqueArticles = removeDuplicates(newArticles);
+          setNews(uniqueArticles);
           setPage(1);
           setTotalResults(newsResponse.totalResults);
         } else {
-          setNews(prev => [...prev, ...newArticles]);
+          setNews(prev => {
+            const combinedArticles = [...prev, ...newArticles];
+            return removeDuplicates(combinedArticles);
+          });
         }
         
         // Проверяем, нужно ли переключиться на everything
@@ -124,11 +166,14 @@ export default function NewsList({ category }: NewsListProps) {
           
           if (everythingArticles.length > 0) {
             // Добавляем everything новости к существующим top-headlines
-            setNews(prev => [...prev, ...everythingArticles]);
+            setNews(prev => {
+              const combinedArticles = [...prev, ...everythingArticles];
+              return removeDuplicates(combinedArticles);
+            });
             setTotalResults(everythingResponse.totalResults);
             
             // Проверяем, есть ли еще страницы в everything
-            const hasMoreInEverything = everythingArticles.length === 10;
+            const hasMoreInEverything = everythingArticles.length > 0;
             setHasMore(hasMoreInEverything);
             
             console.log('✅ Switched to everything, added:', everythingArticles.length, 'articles to existing', news.length, 'articles. Total:', news.length + everythingArticles.length, 'hasMore:', hasMoreInEverything);
@@ -159,9 +204,6 @@ export default function NewsList({ category }: NewsListProps) {
           console.log('🔄 No more top headlines, trying everything endpoint');
           setUseEverything(true);
           setPage(1);
-          
-          // Рекурсивно загружаем с everything
-          await loadNews(1, false);
         }
       }
     } catch (err: any) {
@@ -172,7 +214,9 @@ export default function NewsList({ category }: NewsListProps) {
       setRefreshing(false);
       setIsLoadingMore(false);
     }
-  }, [category, news.length, useEverything]);
+
+    
+  }, [category, useEverything, removeDuplicates]);
 
   const onRefresh = useCallback(() => {
     console.log('🔄 Refresh triggered');
@@ -224,15 +268,16 @@ export default function NewsList({ category }: NewsListProps) {
     loadNews(1, true);
   }, [category]);
 
-  useEffect(() => {
-    console.log(' hasMore changed:', hasMore);
-  }, [hasMore]);
+  // useEffect(() => {
+  //   console.log(' hasMore changed:', hasMore);
+  // }, [hasMore]);
 
-  useEffect(() => {
-    console.log('🔄 useEverything changed:', useEverything);
-  }, [useEverything]);
+  // useEffect(() => {
+  //   console.log('🔄 useEverything changed:', useEverything);
+  // }, [useEverything]);
 
-  const renderNewsItem = ({ item }: { item: NewsItem }) => (
+  const renderNewsItem = useCallback(
+  ({ item }: { item: NewsItem }) => (
     <NewCard
       title={item.title}
       date={new Date(item.publishedAt).toLocaleDateString('ru-RU')}
@@ -242,7 +287,9 @@ export default function NewsList({ category }: NewsListProps) {
       description={item.description}
       content={item.content}
     />
-  );
+  ),
+  [] // зависимостей нет, функция стабильна
+);
 
   const renderFooter = () => {
     if (!isLoadingMore || !hasMore) return null;
@@ -345,4 +392,4 @@ export default function NewsList({ category }: NewsListProps) {
       />
     </Container>
   );
-} 
+}) 

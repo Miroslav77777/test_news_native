@@ -115,11 +115,11 @@ const NewCard: React.FC<NewCardProps> = ({ image, title, date, source, url, desc
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    console.log('✅ Image loaded successfully:', {
-      title,
-      imageUrl: image,
-      timestamp: new Date().toISOString()
-    });
+    // console.log('✅ Image loaded successfully:', {
+    //   title,
+    //   imageUrl: image,
+    //   timestamp: new Date().toISOString()
+    // });
     setImageLoading(false);
     setImageTimeout(false);
   };
@@ -128,12 +128,12 @@ const NewCard: React.FC<NewCardProps> = ({ image, title, date, source, url, desc
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    console.log('❌ Image loading error:', {
-      title,
-      imageUrl: image,
-      error: error?.nativeEvent?.error || 'Unknown error',
-      timestamp: new Date().toISOString()
-    });
+    // console.log('❌ Image loading error:', {
+    //   title,
+    //   imageUrl: image,
+    //   error: error?.nativeEvent?.error || 'Unknown error',
+    //   timestamp: new Date().toISOString()
+    // });
     setImageLoading(false);
     setImageError(true);
     setImageTimeout(false);
@@ -175,6 +175,9 @@ const NewCard: React.FC<NewCardProps> = ({ image, title, date, source, url, desc
   return (
     <TouchableOpacity onPress={handlePress} activeOpacity={0.7}>
       <CardContainer>
+      {imageLoading && isValidImageUrl && (
+          <SkeletonImage style={{ backgroundColor: imageBackgroundColor }} />
+        )}
         {isValidImageUrl && !imageError ? (
           <CardImage 
             source={{ uri: image }} 
@@ -185,16 +188,8 @@ const NewCard: React.FC<NewCardProps> = ({ image, title, date, source, url, desc
             progressiveRenderingEnabled={true}
             fadeDuration={300}
           />
-        ) : null}
-        
-        {imageLoading && isValidImageUrl && (
-          <SkeletonImage style={{ backgroundColor: imageBackgroundColor }} />
-        )}
-        
-        {(!isValidImageUrl || imageError) && (
-          <FallbackImage />
-        )}
-        
+        ) : <FallbackImage />}
+
         <CardTextContainer>
           <CardTitleContainer>
             <Title>{truncateTitle(title)}</Title>

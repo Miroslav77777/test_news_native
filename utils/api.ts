@@ -23,7 +23,8 @@ const stopWords = [
     'up', 'down', 'out', 'off', 'over', 'under', 'again', 'further', 'then', 'once',
     'here', 'there', 'whence', 'wherever', 'now', 'today', 'tomorrow', 'yesterday',
     'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such',
-    'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very'
+    'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 'shows',
+    'from', 'about', 'for', 'of', 'with', 'by', 'is'
 ];
 
 const filterAndCleanArticles = (articles: any[]) => {
@@ -31,20 +32,34 @@ const filterAndCleanArticles = (articles: any[]) => {
         .filter((article: any) => 
             article.content && article.content.trim().length > 0
         )
-        .map((article: any) => ({
-            ...article,
-            content: article.content
+        .map((article: any) => {
+            // Очищаем content
+            const cleanedContent = article.content
                 .replace(/\[\+\d+\s*chars?\]/gi, '') // Убираем [+n chars]
                 .replace(/<[^>]*>/g, '') // Убираем HTML теги
                 .replace(/&[a-zA-Z0-9#]+;/g, ' ') // Убираем HTML entities
                 .replace(/\s+/g, ' ') // Заменяем множественные пробелы на один
-                .trim()
-        }));
+                .replace(/\n/g, " ") // Заменяем переносы строк на пробелы
+                .replace(/^['"]|['"]$/g, '') // Убираем кавычки в начале и конце строки
+                .trim();
+            
+            // Убираем description если он равен content
+            const articleData = {
+                ...article,
+                content: cleanedContent
+            };
+            
+            if (article.description && article.description.trim() === cleanedContent) {
+                delete articleData.description;
+            }
+            
+            return articleData;
+        });
 };
 
 
 
-export const getNews = async (category: string, page: number, useEverything: boolean = false) => {
+export const getNews = async function getNews(category: string, page: number, useEverything: boolean = false) {
     const pageSize = 10;
     const country = 'us';
 
@@ -145,15 +160,16 @@ export const getNews = async (category: string, page: number, useEverything: boo
 };
 
 // Функция для поиска новостей
-export const searchNews = async (query: string, page: number = 1) => {
+export const searchNews = async (query: string, page: number = 1, type: string = 'default') => {
     const pageSize = 10;
+
     
     try {
-        console.log('🔍 Searching news:', { query, page });
+        console.log('🔍 Searching news manual:', { query, page });
         
         const response = await api.get('/everything', {
             params: {
-                q: query,
+                q: type === 'input' ? query.trim().split(/\s+/).slice(0, 3).join(' ') : query,
                 apiKey,
                 pageSize,
                 page,
@@ -181,6 +197,7 @@ export const searchNews = async (query: string, page: number = 1) => {
             pageSize: pageSize,
             query
         });
+        console.trace()
         
         return {
             ...response.data,
@@ -217,7 +234,7 @@ export const getNewsByWords = async (searched: string, words: string, page: numb
             finalQuery = `${searched} AND ${wordsQuery}`;
         }
         
-        console.log('🔍 Complex search query:', { searched, words, finalQuery });
+        console.log('🔍 Complex search query auto:', { searched, words, finalQuery });
         
         const response = await api.get('/everything', {
             params: {
@@ -226,7 +243,8 @@ export const getNewsByWords = async (searched: string, words: string, page: numb
                 pageSize,
                 page,
                 sortBy: 'publishedAt',
-                language: 'en'
+                language: 'en',
+                searchIn: 'title'
             },
         });
         

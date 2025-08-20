@@ -126,7 +126,7 @@ const StickyTitle = styled(Animated.Text)`
 
 const StickyDescription = styled(Animated.Text)`
   color:rgba(0, 0, 0, 0.8);
-  font-size: 14px;
+  font-size: 12px;
   width: 80%;
 `;
 
