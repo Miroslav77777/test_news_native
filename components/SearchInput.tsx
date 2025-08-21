@@ -22,6 +22,7 @@ const SearchContainer = styled.View`
     flex-direction: row;
     align-items: center;
     padding: 10px;
+    padding-top: 25px;
     background-color: white;
     border-bottom-width: 1px;
     border-bottom-color: #e0e0e0;
@@ -36,8 +37,9 @@ const SearchInputWrapper = styled.View`
 `;
 
 const BackButton = styled.TouchableOpacity<{ isPressed: boolean }>`
-    padding: 8px;
-    border-radius: 8px;
+    padding: 5px;
+    margin-right: 10px;
+    border-radius: 15px;
     background-color: ${props => props.isPressed ? '#f0f0f0' : 'transparent'};
 `;
 
@@ -59,7 +61,7 @@ const SearchInputField = styled(TextInput)`
 `;
 
 const SearchResultContainer = styled.View`
-    height: 400px;
+    height: 500px;
     background-color: white;
     border-bottom-width: 1px;
     border-bottom-color: #e0e0e0;
@@ -125,7 +127,7 @@ export const SearchInput: React.FC<SearchInputProps> = ({
     const [isBackPressed, setIsBackPressed] = useState(false);
     const [isKeyboardFocused, setIsKeyboardFocused] = useState(false);
     const isFocused = useIsFocused();
-    console.log('🔍 initialValue:', searchText, initialValue);
+            console.log('initialValue:', searchText, initialValue);
     
     const searchInputRef = useRef<TextInput>(null);
 

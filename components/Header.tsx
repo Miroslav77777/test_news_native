@@ -7,7 +7,7 @@ import { SearchInput } from './SearchInput';
 const HeaderContainer = styled.View<{ isSearching: boolean }>`
   flex-direction: row;
   align-items: center;
-  padding-top: 10px;
+  padding-top: 25px;
   padding-horizontal: 10px;
   padding-bottom: 10px;
   background-color: #ffffff;

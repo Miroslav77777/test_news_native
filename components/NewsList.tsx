@@ -85,7 +85,7 @@ export default memo(function NewsList({ category, queryType, searchQuery, queryN
     
     const duplicatesRemoved = articles.length - uniqueArticles.length;
     if (duplicatesRemoved > 0) {
-      console.log('🔄 Удалено дубликатов:', duplicatesRemoved);
+      console.log('Удалено дубликатов:', duplicatesRemoved);
     }
     
     return uniqueArticles;
@@ -93,12 +93,12 @@ export default memo(function NewsList({ category, queryType, searchQuery, queryN
 
   const HandleQuery = async (pageNum: number): Promise<NewsResponse> => {
     if (queryType === 'auto' && searchQuery && news[0]?.title) {
-      console.log('🔄⭐️⭐️⭐️⭐️⭐️ Loading news by auto:')
+      console.log('Loading news by auto:')
       return await getNewsByWords(searchQuery, news[0].title, pageNum);
     }
   
     if (queryType === 'manual' && searchQuery) {
-      console.log('🔄⭐️⭐️⭐️⭐️⭐️ Loading news by manual:')
+      console.log('Loading news by manual:')
       return await searchNews(searchQuery, pageNum);
     }
   
@@ -116,7 +116,7 @@ export default memo(function NewsList({ category, queryType, searchQuery, queryN
       
       setError(null);
       
-      console.log('🔄 Loading news:', { 
+      console.log('Loading news:', { 
         page: pageNum, 
         category, 
         isRefresh, 
@@ -127,7 +127,7 @@ export default memo(function NewsList({ category, queryType, searchQuery, queryN
 
       const newArticles = newsResponse.articles || [];
       
-      console.log('📰 Received news response:', {
+              console.log('Received news response:', {
         articlesCount: newArticles.length,
         totalResults: newsResponse.totalResults,
         status: newsResponse.status,
@@ -155,7 +155,7 @@ export default memo(function NewsList({ category, queryType, searchQuery, queryN
         
         if (!hasMoreFromCurrentEndpoint && !useEverything && category === 'all') {
           // Переключаемся на everything для получения большего количества новостей
-          console.log('🔄 Switching to everything endpoint for more news');
+          console.log('Switching to everything endpoint for more news');
           setUseEverything(true);
           setHasMore(true);
           setPage(1);
@@ -176,7 +176,7 @@ export default memo(function NewsList({ category, queryType, searchQuery, queryN
             const hasMoreInEverything = everythingArticles.length > 0;
             setHasMore(hasMoreInEverything);
             
-            console.log('✅ Switched to everything, added:', everythingArticles.length, 'articles to existing', news.length, 'articles. Total:', news.length + everythingArticles.length, 'hasMore:', hasMoreInEverything);
+            console.log('Switched to everything, added:', everythingArticles.length, 'articles to existing', news.length, 'articles. Total:', news.length + everythingArticles.length, 'hasMore:', hasMoreInEverything);
           } else {
             setHasMore(false);
           }
@@ -184,7 +184,7 @@ export default memo(function NewsList({ category, queryType, searchQuery, queryN
           // Обычная логика пагинации
           setHasMore(hasMoreFromCurrentEndpoint);
           
-          console.log('📄 Pagination status:', {
+          console.log('Pagination status:', {
             currentPage: pageNum,
             hasMore: hasMoreFromCurrentEndpoint,
             articlesReceived: newArticles.length,
@@ -198,16 +198,16 @@ export default memo(function NewsList({ category, queryType, searchQuery, queryN
         // Если нет новостей и мы уже используем everything, значит больше нет
         if (useEverything) {
           setHasMore(false);
-          console.log('🏁 No more articles available from everything');
+          console.log('No more articles available from everything');
         } else {
           // Пробуем переключиться на everything
-          console.log('🔄 No more top headlines, trying everything endpoint');
+          console.log('No more top headlines, trying everything endpoint');
           setUseEverything(true);
           setPage(1);
         }
       }
     } catch (err: any) {
-      console.error('❌ Error loading news:', err);
+              console.error('Error loading news:', err);
       setError(err.message || 'Ошибка загрузки новостей');
     } finally {
       setLoading(false);
@@ -219,7 +219,7 @@ export default memo(function NewsList({ category, queryType, searchQuery, queryN
   }, [category, useEverything, removeDuplicates]);
 
   const onRefresh = useCallback(() => {
-    console.log('🔄 Refresh triggered');
+    console.log('Refresh triggered');
     setError(null);
     setHasMore(true);
     setTotalResults(0);
@@ -228,7 +228,7 @@ export default memo(function NewsList({ category, queryType, searchQuery, queryN
   }, [loadNews]);
 
   const loadMore = useCallback(() => {
-    console.log('🔍 LoadMore check:', {
+            console.log('LoadMore check:', {
       isLoadingMore,
       hasMore,
       refreshing,
@@ -241,11 +241,11 @@ export default memo(function NewsList({ category, queryType, searchQuery, queryN
     
     if (!isLoadingMore && hasMore && !refreshing && !loading) {
       const nextPage = page + 1;
-      console.log('⬇️ Loading more, next page:', nextPage, 'endpoint:', useEverything ? 'everything' : 'top-headlines');
+      console.log('Loading more, next page:', nextPage, 'endpoint:', useEverything ? 'everything' : 'top-headlines');
       setPage(nextPage);
       loadNews(nextPage, false);
     } else {
-      console.log('⏸️ Load more blocked:', {
+      console.log('Load more blocked:', {
         isLoadingMore,
         hasMore,
         refreshing,
@@ -258,23 +258,27 @@ export default memo(function NewsList({ category, queryType, searchQuery, queryN
   }, [isLoadingMore, hasMore, refreshing, loading, page, loadNews, news.length, totalResults, useEverything]);
 
   useEffect(() => {
-    console.log('🔄 Category changed, resetting...');
+    console.log('Category or props changed, resetting...');
+  
     setPage(1);
     setNews([]);
     setHasMore(true);
     setError(null);
     setTotalResults(0);
     setUseEverything(false); // Сбрасываем к top-headlines
-    loadNews(1, true);
-  }, [category]);
-
-  // useEffect(() => {
-  //   console.log(' hasMore changed:', hasMore);
-  // }, [hasMore]);
-
-  // useEffect(() => {
-  //   console.log('🔄 useEverything changed:', useEverything);
-  // }, [useEverything]);
+  
+    if (queryType === 'manual' && queryNews.length > 0) {
+              // Используем локальные данные без запроса к API
+              console.log('Using queryNews from props, skipping initial API call');
+      setNews(queryNews);
+      setTotalResults(queryNews.length);
+      // пока считаем, что могут быть ещё результаты
+      setHasMore(true);
+    } else {
+      // стандартный флоу для остальных случаев
+      loadNews(1, true);
+    }
+  }, [category, queryType, searchQuery]);
 
   const renderNewsItem = useCallback(
   ({ item }: { item: NewsItem }) => (
@@ -301,7 +305,7 @@ export default memo(function NewsList({ category, queryType, searchQuery, queryN
           Загрузка... ({news.length} из {totalResults})
         </Text>
         <Text style={{ marginTop: 5, color: '#999', fontSize: 12 }}>
-          {useEverything ? '🔍 Поиск по всем новостям' : '📰 Топ-новости'}
+          {useEverything ? 'Поиск по всем новостям' : 'Топ-новости'}
         </Text>
       </LoadingContainer>
     );
@@ -336,7 +340,7 @@ export default memo(function NewsList({ category, queryType, searchQuery, queryN
         alignItems: 'center'
       }}>
         <Text style={{ color: '#1976d2', fontSize: 12, fontWeight: 'bold' }}>
-          🔍 Переключились на поиск по всем новостям
+          Переключились на поиск по всем новостям
         </Text>
         <Text style={{ color: '#666', fontSize: 10, marginTop: 2 }}>
           Загружено {news.length} новостей

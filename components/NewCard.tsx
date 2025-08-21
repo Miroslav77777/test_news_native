@@ -115,7 +115,7 @@ const NewCard: React.FC<NewCardProps> = ({ image, title, date, source, url, desc
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    // console.log('✅ Image loaded successfully:', {
+            // console.log('Image loaded successfully:', {
     //   title,
     //   imageUrl: image,
     //   timestamp: new Date().toISOString()
@@ -128,7 +128,7 @@ const NewCard: React.FC<NewCardProps> = ({ image, title, date, source, url, desc
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    // console.log('❌ Image loading error:', {
+            // console.log('Image loading error:', {
     //   title,
     //   imageUrl: image,
     //   error: error?.nativeEvent?.error || 'Unknown error',

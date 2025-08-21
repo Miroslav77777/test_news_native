@@ -76,18 +76,18 @@ function HomeScreen({ }: HomeScreenProps) {
 const SearchResultsScreen = ({ route, navigation }: SearchResultsScreenProps) => {
   const { searchQuery, queryType, news } = route.params;
   
-  console.log('🔍 SearchResultsScreen открыт с параметрами:', { searchQuery, queryType, newsCount: news?.length });
+          console.log('SearchResultsScreen открыт с параметрами:', { searchQuery, queryType, newsCount: news?.length });
   
   const handleBackPress = () => {
-    console.log('🔍 Нажата кнопка назад, возвращаюсь на предыдущий экран');
+            console.log('Нажата кнопка назад, возвращаюсь на предыдущий экран');
     navigation.goBack();
   };
 
   const handleNewSearch = (newSearchQuery: string, newQueryType: string, newNews: NewsItem[]) => {
-    console.log('🔍 Новый поиск:', { newSearchQuery, newQueryType, newNewsCount: newNews?.length });
+            console.log('Новый поиск:', { newSearchQuery, newQueryType, newNewsCount: newNews?.length });
     
     // Логируем текущий маршрут
-    console.log('🔍 Текущий маршрут: SearchResults с параметрами:', { searchQuery, queryType, newsCount: news?.length });
+          console.log('Текущий маршрут: SearchResults с параметрами:', { searchQuery, queryType, newsCount: news?.length });
     
     // Навигация на новый экран с новыми параметрами, сохраняя историю
     navigation.push('SearchResults', {
@@ -152,7 +152,11 @@ function App() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+      <StatusBar
+        translucent={true}
+        backgroundColor="transparent"
+        barStyle={'dark-content'}
+      />
       <NavigationContainer>
         <Stack.Navigator initialRouteName="Home">
           <Stack.Screen name="Home" component={HomeScreen} options={{ header: () => <Header /> }} />
@@ -161,8 +165,6 @@ function App() {
             component={DetailsScreen}
             options={{
               headerShown: false, // Скрываем стандартный хедер
-              statusBarStyle: 'light',
-              statusBarTranslucent: true,
             }}
           />
           <Stack.Screen

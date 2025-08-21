@@ -20,7 +20,7 @@ interface ParallaxHeaderProps {
 
 const Container = styled.View`
   flex: 1;
-  background-color: #ffffff;
+  background-color: transparent;
 `;
 
 const HeaderContainer = styled(Animated.View)`
